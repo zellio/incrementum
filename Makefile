@@ -16,19 +16,23 @@ VPATH=$(SRCROOT):$(INCROOT):$(TSTROOT):$(OBJROOT)
 
 .PHONY: all
 
-all:
+all: runtime
 
-# pointer.o: lang/types/atom/pointer.c lang/types/atom/pointer.h
-# 	$(CC) $(CFLAGS) -I$(INCROOT) -o $(OBJROOT)/$(@) $(<)
+ctest.o: ctest.c ctest.h
+	$(CC) $(CFLAGS) -I$(INCROOT) -o $(OBJROOT)/$(@) $(<)
 
-# repl: top.o atom.o symbol.o boolean.o number.o cons.o elementary.o auxiliary.o evalquote.o lexer.o repl.o
-# 	$(CC) -o $(@) $(OBJROOT)/top.o $(OBJROOT)/atom.o $(OBJROOT)/symbol.o $(OBJROOT)/boolean.o $(OBJROOT)/number.o $(OBJROOT)/cons.o $(OBJROOT)/elementary.o $(OBJROOT)/auxiliary.o $(OBJROOT)/evalquote.o $(OBJROOT)/lexer.o $(OBJROOT)/repl.o
+runtime.o: runtime.c runtime.h
+	$(CC) $(CFLAGS) -I$(INCROOT) -o $(OBJROOT)/$(@) $(<)
+
+runtime: runtime.o ctest.o
+	$(CC) -o $(OBJROOT)/$(@) $(OBJROOT)/runtime.o $(OBJROOT)/ctest.o
 
 
 .PHONY: clean
 
 clean:
 	$(RM) $(OBJROOT)/*.o
+	$(RM) $(OBJROOT)/runtime
 
 
 .PHONY: rebuild
