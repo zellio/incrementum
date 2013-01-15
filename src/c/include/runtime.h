@@ -3,6 +3,9 @@
 #define __CBTF_RUNTIME_H__ 1
 
 
+#include <stdint.h>
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,7 +32,7 @@ typedef enum {
 typedef unsigned int ptr;
 
 
-ptr scheme_entry(void);
+ptr scheme_entry(uint8_t* stack_base);
 
 int print_ptr(ptr x);
 int main(void);
