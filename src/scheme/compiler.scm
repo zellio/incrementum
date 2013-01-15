@@ -131,7 +131,6 @@
   (emit "  cmp $~s, %al" fixnum-tag)
   (emit-predicate))
 
-
 (define-primitive (fixnum? arg)
   (emit-expr arg)
   (emit "  and $~s, %al" fixnum-mask)
@@ -161,10 +160,48 @@
   (emit-predicate))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;;  (if test then else)
+;;
+(define unique-label
+  (let ((count 0))
+    (lambda ()
+      (let ((label (format "L_~s" count)))
+        (set! count (add1 count))
+        label))))
+
+(define (if? expr)
+  (and (list? expr) (eq? (car expr) 'if) (= 4 (length expr))))
+
+(define (if-test expr)
+  (cadr expr))
+
+(define (if-conseq expr)
+  (caddr expr))
+
+(define (if-altern expr)
+  (cadddr expr))
+
+(define (emit-if expr)
+  (let ((alt-label (unique-label))
+        (end-label (unique-label)))
+    (emit-expr (if-test expr))
+    (emit "	cmp $~s,	%al" boolean-f)
+    (emit "	je ~a" alt-label)
+    (emit-expr (if-conseq expr))
+    (emit "	jmp ~a" end-label)
+    (emit "~a:" alt-label)
+    (emit-expr (if-altern expr))
+    (emit "~a:" end-label)))
+
+
+
 (define (emit-expr expr)
   (cond
    ((immediate? expr) (emit-immediate expr))
-   ((primcall? expr) (emit-primcall expr))
+   ((primcall? expr)  (emit-primcall expr))
+   ((if? expr)        (emit-if expr))
    (else (error 'emit-expr (format "~s is not a valid expression" expr)))))
 
 (define (emit-function-header f)
