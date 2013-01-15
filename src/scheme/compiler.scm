@@ -162,7 +162,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;;  (if test then else)
+;;  Conditional Expressions
 ;;
 (define unique-label
   (let ((count 0))
@@ -196,26 +196,37 @@
     (emit "~a:" end-label)))
 
 
+
+(define (emit-jump-block expr jump label)
+  (let ((head (car expr)) (rest (cdr expr)))
+    (emit-expr head)
+    (emit "	cmp	$~s,	%al" boolean-f)
+    (emit "	~a	~a" jump label)
+    (unless (null? rest)
+      (emit-jump-block rest jump label))))
+
+(define (emit-conditional-block default jump)
+  (lambda (expr)
+    (case (length expr)
+      ((1) (emit-immediate default))
+      ((2) (emit-expr (cadr expr)))
+      (else
+       (let ((end-label (unique-label)))
+         (emit-jump-block (cdr expr) jump end-label)
+         (emit "~a:" end-label))))))
+
 (define (and? expr)
   (and (list? expr) (eq? (car expr) 'and)))
 
-(define (emit-and-block expr end-label)
-  (let ((x (car expr))
-        (xs (cdr expr)))
-    (emit-expr x)
-    (emit "	cmp $~s,	%al" boolean-f)
-    (emit "	je	~a" end-label)
-    (unless (null? xs)
-      (emit-and-block xs end-label))))
+(define emit-and
+  (emit-conditional-block #t "je"))
 
-(define (emit-and expr)
-  (case (length expr)
-    ((1) (emit-immediate #t))
-    ((2) (emit-expr (cadr expr)))
-    (else
-     (let ((end-label (unique-label)))
-       (emit-and-block (cdr expr) end-label)
-       (emit "~a:" end-label)))))
+(define (or? expr)
+  (and (list? expr) (eq? (car expr) 'or)))
+
+(define emit-or
+  (emit-conditional-block #f "jne"))
+
 
 
 
@@ -225,6 +236,7 @@
    ((primcall? expr)  (emit-primcall expr))
    ((if? expr)        (emit-if expr))
    ((and? expr)       (emit-and expr))
+   ((or? expr)        (emit-or expr))
    (else (error 'emit-expr (format "~s is not a valid expression" expr)))))
 
 (define (emit-function-header f)

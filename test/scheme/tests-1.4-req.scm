@@ -30,3 +30,13 @@
   ((and 1 #f 2) => "#f\n")
   ((and 432 (and 4 5 2) (if (char? 1) 32 #f)) => "#f\n")
 )
+
+(add-tests-with-string-output "or"
+  ((or) => "#f\n")
+  ((or 1) => "1\n")
+  ((or #\space) => "#\\space\n")
+  ((or (char? 1) (boolean? 1) 10) => "10\n")
+  ((or (and 1 2 (or #f 3)) #f 2) => "3\n")
+  ((not (or)) => "#t\n")
+  ((not (or (not (and)) (not (or)))) => "#f\n")
+)
