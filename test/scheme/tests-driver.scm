@@ -48,8 +48,8 @@
    (build)
    (execute)
    (unless (string=? expected-output (get-string))
-     (error 'test "output mismatch for test ~s, expected ~s, got ~s"
-        test-id expected-output (get-string))))
+     (error 'test (format "output mismatch for test ~s, expected ~s, got ~s"
+        test-id expected-output (get-string)))))
 
 (define (test-one test-id test)
   (let ([expr (car test)]
@@ -59,7 +59,7 @@
     (flush-output-port)
     (case type
      [(string) (test-with-string-output test-id expr out)]
-     [else (error 'test "invalid test type ~s" type)])
+     [else (error 'test (format "invalid test type ~s" type))])
     (printf " ok\n")))
 
 (define (test-all)
@@ -83,7 +83,7 @@
   (make-parameter (lambda (x) x)
     (lambda (x)
       (unless (procedure? x)
-        (error 'input-filter "not a procedure ~s" x))
+        (error 'input-filter (format "not a procedure ~s" x)))
       x)))
 
 (define runtime-file
@@ -99,7 +99,7 @@
     (current-output-port)
     (lambda (p)
        (unless (output-port? p)
-         (error 'compile-port "not an output port ~s" p))
+         (error 'compile-port (format "not an output port ~s" p)))
        p)))
 
 (define show-compiler-output (make-parameter #f))
@@ -131,8 +131,8 @@
    (build)
    (execute)
    (unless (string=? expected-output (get-string))
-     (error 'test "output mismatch for test ~s, expected ~s, got ~s"
-        test-id expected-output (get-string))))
+     (error 'test (format "output mismatch for test ~s, expected ~s, got ~s"
+        test-id expected-output (get-string)))))
 
 (define (emit . args)
   (apply fprintf (compile-port) args)
