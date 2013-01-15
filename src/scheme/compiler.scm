@@ -1,12 +1,13 @@
 
-;;;;
 ;;
 ;;  <EXPR> -> <Imm>
-;;          | (prim <EXPR)
+;;          | (prim <Expr>)
+;;          | (if <Expr> <Expr> <Expr>)
+;;          | (and <Expr>* ...)
+;;          | (or <Expr>* ...)
 ;;  <Imm>  -> fixnum | boolean | char | null
+;;
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;  Constants
 ;;
@@ -41,9 +42,9 @@
   (and (integer? x) (exact? x) (<= fixnum-lower-bound x fixnum-upper-bound)))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;;  Immediate handlers
+;; 1.1 Integers
+;; 1.2 Immediate Constants
 ;;
 (define (immediate? x)
   (or (fixnum? x) (boolean? x) (null? x) (char? x)))
@@ -61,9 +62,8 @@
   (emit "	movl	$~s,	%eax" (immediate-rep x)))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;;  Primirive Handlers
+;;  1.3 Unary Primitives
 ;;
 (define-syntax define-primitive
   (syntax-rules ()
@@ -98,11 +98,6 @@
   (emit "  sal $~s, %al" boolean-bit)
   (emit "  or $~s, %al" boolean-f))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;;  Primitve definitions
-;;
 (define-primitive ($fxadd1 arg)
   (emit-expr arg)
   (emit "	addl $~s,	%eax" (immediate-rep 1)))
@@ -160,9 +155,8 @@
   (emit-predicate))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;;  Conditional Expressions
+;;  1.4 Conditional Expressions
 ;;
 (define unique-label
   (let ((count 0))
@@ -195,8 +189,6 @@
     (emit-expr (if-altern expr))
     (emit "~a:" end-label)))
 
-
-
 (define (emit-jump-block expr jump label)
   (let ((head (car expr)) (rest (cdr expr)))
     (emit-expr head)
@@ -228,8 +220,9 @@
   (emit-conditional-block #f "jne"))
 
 
-
-
+;;
+;;  Compiler
+;;
 (define (emit-expr expr)
   (cond
    ((immediate? expr) (emit-immediate expr))
