@@ -196,12 +196,35 @@
     (emit "~a:" end-label)))
 
 
+(define (and? expr)
+  (and (list? expr) (eq? (car expr) 'and)))
+
+(define (emit-and-block expr end-label)
+  (let ((x (car expr))
+        (xs (cdr expr)))
+    (emit-expr x)
+    (emit "	cmp $~s,	%al" boolean-f)
+    (emit "	je	~a" end-label)
+    (unless (null? xs)
+      (emit-and-block xs end-label))))
+
+(define (emit-and expr)
+  (case (length expr)
+    ((1) (emit-immediate #t))
+    ((2) (emit-expr (cadr expr)))
+    (else
+     (let ((end-label (unique-label)))
+       (emit-and-block (cdr expr) end-label)
+       (emit "~a:" end-label)))))
+
+
 
 (define (emit-expr expr)
   (cond
    ((immediate? expr) (emit-immediate expr))
    ((primcall? expr)  (emit-primcall expr))
    ((if? expr)        (emit-if expr))
+   ((and? expr)       (emit-and expr))
    (else (error 'emit-expr (format "~s is not a valid expression" expr)))))
 
 (define (emit-function-header f)
