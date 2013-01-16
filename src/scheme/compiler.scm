@@ -95,17 +95,17 @@
 
 (define (emit-predicate . args)
   (emit "	~a	%al" (if (null? args) 'sete (car args)))
-  (emit "	movzb %al, %rax")
-  (emit "	sal $~s, %al" boolean-bit)
-  (emit "	or $~s, %al" boolean-f))
+  (emit "	movzb	%al,	%rax")
+  (emit "	sal	$~s,	%al" boolean-bit)
+  (emit "	or	$~s,	%al" boolean-f))
 
 (define-primitive ($fxadd1 si arg)
   (emit-expr si arg)
-  (emit "  addl $~s, %eax" (immediate-rep 1)))
+  (emit "	addl	$~s,	%eax" (immediate-rep 1)))
 
 (define-primitive ($fxsub1 si arg)
   (emit-expr si arg)
-  (emit "	subl $~s,	%eax" (immediate-rep 1)))
+  (emit "	subl	$~s,	%eax" (immediate-rep 1)))
 
 (define-primitive ($fixnum->char si arg)
   (emit-expr si arg)
@@ -124,35 +124,35 @@
 
 (define-primitive ($fxzero? si arg)
   (emit-expr si arg)
-  (emit "  cmp $~s, %al" fixnum-tag)
+  (emit "	cmp	$~s,	%al" fixnum-tag)
   (emit-predicate))
 
 (define-primitive (fixnum? si arg)
   (emit-expr si arg)
-  (emit "  and $~s, %al" fixnum-mask)
-  (emit "  cmp $~s, %al" fixnum-tag)
+  (emit "	and	$~s,	%al" fixnum-mask)
+  (emit "	cmp	$~s,	%al" fixnum-tag)
   (emit-predicate))
 
 (define-primitive (null? si arg)
   (emit-expr si arg)
-  (emit "	cmp $~s, %al" nil)
+  (emit "	cmp	$~s,	%al" nil)
   (emit-predicate))
 
 (define-primitive (boolean? si arg)
   (emit-expr si arg)
-  (emit "	and $~s, %al" boolean-mask)
-  (emit "	cmp $~s, %al" boolean-f)
+  (emit "	and	$~s,	%al" boolean-mask)
+  (emit "	cmp	$~s,	%al" boolean-f)
   (emit-predicate))
 
 (define-primitive (char? si arg)
   (emit-expr si arg)
-  (emit "  and $~s, %al" char-mask)
-  (emit "  cmp $~s, %al" char-tag)
+  (emit "	and	$~s,	%al" char-mask)
+  (emit "	cmp	$~s,	%al" char-tag)
   (emit-predicate))
 
 (define-primitive (not si arg)
   (emit-expr si arg)
-  (emit "  cmp $~s, %al" boolean-f)
+  (emit "	cmp	$~s,	%al" boolean-f)
   (emit-predicate))
 
 
@@ -182,13 +182,13 @@
   (let ((alt-label (unique-label))
         (end-label (unique-label)))
     (emit-expr si (if-test expr))
-    (emit "	cmp $~s,	%al" boolean-f)
-    (emit "	je ~a" alt-label)
+    (emit "	cmp	$~s,	%al" boolean-f)
+    (emit "	je	~a" alt-label)
     (emit-expr si (if-conseq expr))
-    (emit "	jmp ~a" end-label)
-    (emit "~a:" alt-label)
+    (emit "	jmp	~a" end-label)
+    (emit-label alt-label)
     (emit-expr si (if-altern expr))
-    (emit "~a:" end-label)))
+    (emit-label end-label)))
 
 (define (emit-jump-block si expr jump label)
   (let ((head (car expr)) (rest (cdr expr)))
@@ -206,7 +206,7 @@
       (else
        (let ((end-label (unique-label)))
          (emit-jump-block si (cdr expr) jump end-label)
-         (emit "~a:" end-label))))))
+         (emit-label end-label))))))
 
 (define (and? expr)
   (and (list? expr) (eq? (car expr) 'and)))
@@ -265,7 +265,7 @@
 
 (define (define-binary-predicate op si arg1 arg2)
   (emit-binary-operator si arg1 arg2)
-  (emit "	cmp %rax,	~s(%rsp)" si)
+  (emit "	cmp	%rax,	~s(%rsp)" si)
   (emit-predicate op))
 
 (define-primitive (fx= si arg1 arg2)
