@@ -283,6 +283,46 @@
 ;;
 ;; 1.6 Local Variables
 ;;
+(define variable? symbol?)
+
+(define (emit-stack-load si)
+  (emit "	mov	~s(%rsp),	%rax" si))
+
+(define (emit-variable-ref env expr)
+  (let ((pair (assoc expr env)))
+    (if pair (emit-stack-load (cdr pair))
+        (error 'emit-variable-ref (format "undefined variable ~s" expr)))))
+
+(define (let? expr)
+  (and (list? expr) (eq? (car expr) 'let) (= (length expr) 3)))
+
+(define let-bindings cadr)
+(define let-body caddr)
+
+(define empty? null?)
+
+(define (emit-stack-save si)
+  (emit "	mov	%rax,	~s(%rsp)" si))
+
+(define (next-stack-index si)
+  (- si wordsize))
+
+(define (extend-env var si new-env)
+  (cons (cons var si) new-env))
+
+(define (emit-let si env expr)
+  (define (process-let bindings si new-env)
+    (cond
+     ((empty? bindings)
+      (emit-expr si new-env (let-body expr)))
+     (else
+      (let ((b (car bindings)))
+        (emit-expr si env (cadr b))
+        (emit-stack-save si)
+        (process-let (cdr bindings)
+           (next-stack-index si)
+           (extend-env (car b) si new-env))))))
+  (process-let (let-bindings expr) si env))
 
 
 ;;
@@ -295,6 +335,7 @@
    ((if? expr)        (emit-if si env expr))
    ((and? expr)       (emit-and si env expr))
    ((or? expr)        (emit-or si env expr))
+   ((variable? expr)  (emit-variable-ref env expr))
    ((let? expr)       (emit-let si env expr))
    (else (error 'emit-expr (format "~s is not a valid expression" expr)))))
 
