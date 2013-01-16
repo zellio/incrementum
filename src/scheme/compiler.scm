@@ -227,11 +227,6 @@
 (define (emit-label f)
   (emit "~a:" f))
 
-(define (emit-function-header f)
-  (emit "	.text")
-  (emit "	.globl	~a" f)
-  (emit "	.type	~a,	@function" f)
-  (emit-label f))
 
 (define (emit-binary-operator si arg1 arg2)
   (emit-expr si arg1)
@@ -301,7 +296,6 @@
   (emit "	.globl	~a" f)
   (emit "	.type	~a,	@function" f)
   (emit-label f))
-
 
 (define (emit-program expr)
   (emit-function-header "scheme_entry")
