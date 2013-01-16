@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 #include <stdio.h>
-
+#include <stdlib.h>
 
 
 static uint8_t* alloc_protected_space( size_t size ) {
@@ -19,12 +19,15 @@ static uint8_t* alloc_protected_space( size_t size ) {
     if ( smem == MAP_FAILED )
         fprintf( stderr, "MAP FAILED\r\n");
 
-    if ( mprotect(smem, page, PROT_NONE) != 0 )
-        fprintf( stderr, "PROTECT FAILED\r\n" );
-
-    if ( mprotect(smem + aligned_size + page, page, PROT_NONE) != 0 )
-        fprintf( stderr, "PROTECT FAILED\r\n" );
-
+    int status = 0;
+    if ((status = mprotect(smem, page, PROT_NONE)) != 0 ) {
+        perror( "mprotect failed" );
+        exit(status);
+    }
+    if ((status = mprotect(smem + aligned_size + page, page, PROT_NONE)) != 0) {
+        perror( "mprotect failed" );
+        exit(status);
+    }
     return (smem + page);
 }
 
@@ -32,10 +35,12 @@ static void free_protected_space( uint8_t* space, size_t size ) {
     uint64_t page = (uint64_t)sysconf(_SC_PAGESIZE);
     uint64_t aligned_size = ((size + page - 1) / page) * page;
 
-    if ( munmap( space - page, aligned_size + 2 * page ) != 0 )
-        fprintf( stderr, "FREE FAILED\r\n" );
+    int status = munmap( space - page, aligned_size + 2 * page );
+    if ( status != 0 ) {
+        perror( "munmap failed" );
+        exit(status);
+    }
 }
-
 
 int print_ptr(ptr x) {
     if ((x & FIXNUM_MASK) == LANG_T_FIXNUM) {
@@ -69,13 +74,10 @@ int print_ptr(ptr x) {
     return 0;
 }
 
-
 int main(void) {
     size_t stack_size = 16 * 4096;
     uint8_t* stack_top = alloc_protected_space( stack_size );
-
     uint8_t* stack_base = stack_top + stack_size;
-
     print_ptr(scheme_entry(stack_base));
     free_protected_space( stack_top, stack_size );
     return 0;

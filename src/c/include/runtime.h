@@ -20,6 +20,9 @@ extern "C" {
 #define CHAR_MASK  0x0F
 #define CHAR_SHIFT 8
 
+
+typedef unsigned int ptr;
+
 typedef enum {
     LANG_T_BOOLEAN_F = 0x2F,
     LANG_T_BOOLEAN_T = 0x6F,
@@ -27,9 +30,6 @@ typedef enum {
     LANG_T_NIL       = 0x3F,
     LANG_T_CHAR      = 0x0F
 } type_e;
-
-
-typedef unsigned int ptr;
 
 
 ptr scheme_entry(uint8_t* stack_base);
