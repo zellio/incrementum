@@ -255,7 +255,9 @@
 
 (define-primitive (fxlognot si env arg1)
   (emit-expr si env arg1)
-  (emit "	not	%rax"))
+  (emit "	shr	$~s,	%rax" fixnum-shift)
+  (emit "	not	%rax")
+  (emit "	shl	$~s,	%rax" fixnum-shift))
 
 (define-primitive (fxlogand si env arg1 arg2)
   (emit-binary-operator si env arg1 arg2)
@@ -349,18 +351,25 @@
 
 
 ;;
+;; 1.7 Procedures
+;;
+
+
+
+;;
 ;;  Compiler
 ;;
 (define (emit-expr si env expr)
   (cond
    ((immediate? expr) (emit-immediate expr))
-   ((primcall? expr)  (emit-primcall si env expr))
+   ((variable? expr)  (emit-variable-ref env expr))
    ((if? expr)        (emit-if si env expr))
    ((and? expr)       (emit-and si env expr))
    ((or? expr)        (emit-or si env expr))
-   ((variable? expr)  (emit-variable-ref env expr))
    ((or (let? expr)
         (let*? expr)) (emit-let si env expr))
+   ((app? expr)       (emit-app si env expr))
+   ((primcall? expr)  (emit-primcall si env expr))
    (else (error 'emit-expr (format "~s is not a valid expression" expr)))))
 
 (define (emit-function-header f)
