@@ -29,14 +29,3 @@
             [o (lambda (x) (if (fxzero? x) #f (e (fxsub1 x))))])
      (e 25)) => "#f\n"]
 )
-
-;;(add-tests-with-string-output "deeply nested procedures"
-;;  [(letrec ([sum (lambda (n ac)
-;;                   (if (fxzero? n)
-;;                        ac
-;;                        (app sum (fxsub1 n) (fx+ n ac))))])
-;;    (app sum 10000 0)) => "50005000\n"]
-;;  [(letrec ([e (lambda (x) (if (fxzero? x) #t (app o (fxsub1 x))))]
-;;            [o (lambda (x) (if (fxzero? x) #f (app e (fxsub1 x))))])
-;;     (app e 5000000)) => "#t\n"]
-;;)
