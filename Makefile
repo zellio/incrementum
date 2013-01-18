@@ -24,9 +24,8 @@ all: stst
 clean:
 	$(RM) $(OBJROOT)/*.s
 	$(RM) $(OBJROOT)/*.o
-	$(RM) $(OBJROOT)/runtime
 	$(RM) $(BINROOT)/*
-
+	$(RM) stst.out
 
 ctest.o: ctest.c ctest.h
 	$(CC) $(CFLAGS) -I$(INCROOT) -o $(OBJROOT)/$(@) $(<)

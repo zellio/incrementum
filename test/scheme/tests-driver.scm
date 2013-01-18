@@ -20,8 +20,6 @@
 (define (build)
   (unless (zero? (system "make all"))
     (error 'make "could not build target")))
-;;  (unless (zero? (system "gcc -o stst startup.c stst.s"))
-;;    (error 'make "could not build target")))
 
 (define (execute)
   (unless (zero? (system "./bin/stst > stst.out"))

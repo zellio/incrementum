@@ -1,16 +1,18 @@
 
+
 ;;
-;;  <EXPR> -> <Imm>
-;;          | (prim <Expr>)
-;;          | (prim <Expr> <Expr>)
-;;          | (if <Expr> <Expr> <Expr>)
-;;          | (and <Expr>* ...)
-;;          | (or <Expr>* ...)
-;;          | var
-;;          | (let ((var <Expr) ...) <Expr>)
-;;          | (let* ((var <Expr) ...) <Expr>)
-;;  <Imm>  -> fixnum | boolean | char | null
+;; <Program> -> <Expr>
+;;            | (letrec ((lvar <Lambda>) ...) <Expr>)
+;;  <Lambda> -> (lambda (var ...) <Expr>)
+;;    <Expr> -> <Imm>
+;;            | var
+;;            | (if <Expr> <Expr> <Expr>)
+;;            | (let ((var <Expr>) ...) <Expr>)
+;;            | (app lvar <Expr> ... )
+;;            | (prim <Expr>)
+;;     <Imm> -> fixnum | boolean | char | null
 ;;
+
 
 ;;
 ;;  Constants
@@ -442,10 +444,15 @@
     (putprop label '*arg-count* (primitive-arg-count prim))
     (putprop label '*emitter* (primitive-emitter prim))))
 
-
 (map mask-primitive
-     '($fxzero? $fxsub1)
-     '( fxzero?  fxsub1))
+     '($fxzero? $fxsub1 $fxadd1)
+     '( fxzero?  fxsub1  fxadd1))
+
+
+;;
+;; 1.8 Iteration via Proper Tail Calls
+;;
+
 
 ;;
 ;;  Compiler
