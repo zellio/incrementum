@@ -88,6 +88,10 @@
 (define (primcall? expr)
   (and (pair? expr) (primitive? (car expr))))
 
+(define (primitive-arg-count x)
+  (or (getprop x '*arg-count*)
+      (error 'primitive-arg-count (format "primitive ~s has no arg count" x))))
+
 (define (check-primcall-args prim args)
   (= (getprop prim '*arg-count*) (length args)))
 
@@ -230,10 +234,9 @@
 (define (emit-label f)
   (emit "~a:" f))
 
-
 (define (emit-binary-operator si env arg1 arg2)
   (emit-expr si env arg1)
-  (emit "	mov	%rax,	~s(%rsp)" si)
+  (emit-stack-save si)
   (emit-expr (- si wordsize) env arg2))
 
 (define-primitive (fx+ si env arg1 arg2)
@@ -353,8 +356,96 @@
 ;;
 ;; 1.7 Procedures
 ;;
+(define (emit-call label)
+  (emit "	call	~a" label))
+
+(define (emit-ret)
+  (emit "	ret"))
+
+(define (letrec? expr)
+  (and (list? expr) (not (null? expr)) (eq? (car expr) 'letrec)))
+
+(define (emit-scheme-entry expr env)
+  (emit-label "L_scheme_entry")
+  (emit-expr (- wordsize) env expr)
+  (emit-ret))
+
+(define (make-initial-env lvars labels)
+  (map cons lvars labels))
+
+(define call-target car)
+
+(define (app? expr env)
+  (and (list? expr) (not (null? expr)) (assoc (call-target expr) env)))
+
+(define letrec-bindings cadr)
+(define letrec-body caddr)
+
+(define unique-labels
+  (let ((count 0))
+    (lambda (lvars)
+      (map (lambda (lvar)
+             (let ((label (format "L_~s_~s" lvar count)))
+               (set! count (add1 count))
+               label))
+           lvars))))
+
+(define lambda-formals cadr)
+(define lambda-body caddr)
+
+(define call-args cdr)
+
+(define (emit-adjust-base si)
+  (unless (= si 0) (emit "	addq	$~s,	%rsp" si)))
+
+(define (emit-app si env expr)
+  (define (emit-arguments si args)
+    (unless (empty? args)
+      (emit-expr si env (car args))
+      (emit-stack-save si)
+      (emit-arguments (- si wordsize) (cdr args))))
+  (emit-arguments (- si wordsize) (call-args expr))
+  (emit-adjust-base (+ si wordsize))
+  (emit-call (cdr (assoc (call-target expr) env)))
+  (emit-adjust-base (- (+ si wordsize))))
+
+(define (emit-lambda env)
+  (lambda (expr label)
+    (emit-function-header label)
+    (let ((fmls (lambda-formals expr))
+          (body (lambda-body expr)))
+      (let f ((fmls fmls)
+              (si (- wordsize))
+              (env env))
+        (cond
+         ((empty? fmls) (emit-expr si env body) (emit-ret))
+         (else
+          (f (cdr fmls)
+             (- si wordsize)
+             (extend-env (car fmls) si env))))
+        ))
+    ))
 
 
+(define (emit-letrec expr)
+  (let* ((bindings (letrec-bindings expr))
+         (lvars (map car bindings))
+         (lambdas (map cadr bindings))
+         (labels (unique-labels lvars))
+         (env (make-initial-env lvars labels)))
+    (for-each (emit-lambda env) lambdas labels)
+    (emit-scheme-entry (letrec-body expr) env)))
+
+(define (mask-primitive prim label)
+  (when (primitive? prim)
+    (putprop label '*is-prim* #t)
+    (putprop label '*arg-count* (primitive-arg-count prim))
+    (putprop label '*emitter* (primitive-emitter prim))))
+
+
+(map mask-primitive
+     '($fxzero? $fxsub1)
+     '( fxzero?  fxsub1))
 
 ;;
 ;;  Compiler
@@ -368,7 +459,7 @@
    ((or? expr)        (emit-or si env expr))
    ((or (let? expr)
         (let*? expr)) (emit-let si env expr))
-   ((app? expr)       (emit-app si env expr))
+   ((app? expr env)   (emit-app si env expr))
    ((primcall? expr)  (emit-primcall si env expr))
    (else (error 'emit-expr (format "~s is not a valid expression" expr)))))
 
@@ -378,13 +469,15 @@
   (emit "	.type	~a,	@function" f)
   (emit-label f))
 
-(define (emit-program expr)
+(define (emit-program-header)
   (emit-function-header "scheme_entry")
   (emit "	mov	%rsp,	%rcx")
   (emit "	sub	$~s,	%rsp" wordsize)
-  (emit "	call	L_scheme_entry")
+  (emit-call "L_scheme_entry")
   (emit "	mov	%rcx,	%rsp")
-  (emit "	ret")
-  (emit-label "L_scheme_entry")
-  (emit-expr (- wordsize) '() expr)
-  (emit "	ret"))
+  (emit-ret))
+
+(define (emit-program program)
+  (emit-program-header)
+  (if (letrec? program) (emit-letrec program)
+      (emit-scheme-entry program (make-initial-env '() '()))))
