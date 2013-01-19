@@ -432,15 +432,14 @@
 ;;
 (define (emit-expr si env expr)
   (cond
-   ((immediate? expr) (emit-immediate expr))
-   ((variable? expr)  (emit-variable-ref env expr))
-   ((if? expr)        (emit-if si env expr))
-   ((and? expr)       (emit-and si env expr))
-   ((or? expr)        (emit-or si env expr))
-   ((or (let? expr)
-        (let*? expr)) (emit-let si env expr))
-   ((apply? expr env)   (emit-apply si env expr))
-   ((primitive-call? expr)  (emit-primitive-call si env expr))
+   ((immediate? expr)      (emit-immediate expr))
+   ((variable? expr)       (emit-variable-ref env expr))
+   ((if? expr)             (emit-if si env expr))
+   ((and? expr)            (emit-and si env expr))
+   ((or? expr)             (emit-or si env expr))
+   ((let!? expr)           (emit-let si env expr))
+   ((apply? expr env)      (emit-apply si env expr))
+   ((primitive-call? expr) (emit-primitive-call si env expr))
    (else (error 'emit-expr (format "~s is not a valid expression" expr)))))
 
 (define (emit-program-header)
