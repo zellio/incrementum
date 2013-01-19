@@ -1,15 +1,15 @@
 
 ;;
-;;  <EXPR> -> <Imm>
-;;          | (prim <Expr>)
-;;          | (prim <Expr> <Expr>)
-;;          | (if <Expr> <Expr> <Expr>)
-;;          | (and <Expr>* ...)
-;;          | (or <Expr>* ...)
-;;          | var
-;;          | (let ((var <Expr) ...) <Expr>)
-;;          | (let* ((var <Expr) ...) <Expr>)
-;;  <Imm>  -> fixnum | boolean | char | null
+;; <Program> -> <Expr>
+;;            | (letrec ((lvar <Lambda>) ...) <Expr>)
+;;  <Lambda> -> (lambda (var ...) <Expr>)
+;;    <Expr> -> <Imm>
+;;            | var
+;;            | (if <Expr> <Expr> <Expr>)
+;;            | (let ((var <Expr>) ...) <Expr>)
+;;            | (app lvar <Expr> ... )
+;;            | (prim <Expr>)
+;;     <Imm> -> fixnum | boolean | char | null
 ;;
 
 ;;
