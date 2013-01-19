@@ -1,4 +1,52 @@
 
+(add-tests-with-string-output "cons"
+  [(fxadd1 0) => "1\n"]
+  [(pair? (cons 1 2)) => "#t\n"]
+  [(pair? 12) => "#f\n"]
+  [(pair? #t) => "#f\n"]
+  [(pair? #f) => "#f\n"]
+  [(pair? ()) => "#f\n"]
+  [(fixnum? (cons 12 43)) => "#f\n"]
+  [(boolean? (cons 12 43)) => "#f\n"]
+  [(null? (cons 12 43)) => "#f\n"]
+  [(not (cons 12 43)) => "#f\n"]
+  [(if (cons 12 43) 32 43) => "32\n"]
+  [(car (cons 1 23)) => "1\n"]
+  [(cdr (cons 43 123)) => "123\n"]
+  [(car (car (cons (cons 12 3) (cons #t #f)))) => "12\n"]
+  [(cdr (car (cons (cons 12 3) (cons #t #f)))) => "3\n"]
+  [(car (cdr (cons (cons 12 3) (cons #t #f)))) => "#t\n"]
+  [(cdr (cdr (cons (cons 12 3) (cons #t #f)))) => "#f\n"]
+  [(let ([x (let ([y (fx+ 1 2)]) (fx* y y))])
+     (cons x (fx+ x x)))
+   => "(9 . 18)\n"]
+  [(let ([t0 (cons 1 2)] [t1 (cons 3 4)])
+     (let ([a0 (car t0)] [a1 (car t1)] [d0 (cdr t0)] [d1 (cdr t1)])
+       (let ([t0 (cons a0 d1)] [t1 (cons a1 d0)])
+         (cons t0 t1))))
+   => "((1 . 4) 3 . 2)\n"]
+  [(let ([t (cons 1 2)])
+     (let ([t t])
+       (let ([t t])
+         (let ([t t])
+           t))))
+   => "(1 . 2)\n"]
+  [(let ([t (let ([t (let ([t (let ([t (cons 1 2)]) t)]) t)]) t)]) t)
+   => "(1 . 2)\n"]
+  [(let ([x ()])
+     (let ([x (cons x x)])
+       (let ([x (cons x x)])
+         (let ([x (cons x x)])
+           (cons x x)))))
+   => "((((()) ()) (()) ()) ((()) ()) (()) ())\n"]
+  [(cons (let ([x #t]) (let ([y (cons x x)]) (cons x y)))
+         (cons (let ([x #f]) (let ([y (cons x x)]) (cons y x)))
+               ()))
+   => "((#t #t . #t) ((#f . #f) . #f))\n"]
+)
+
+
+#!eof
 (add-tests-with-string-output "begin/implicit-begin"
  [(begin 12) => "12\n"]
  [(begin 13 122) => "122\n"]
@@ -8,7 +56,7 @@
     (cons 1 t)
     t) => "(1 . 2)\n"]
  [(let ([t (cons 1 2)])
-    (if (pair? t) 
+    (if (pair? t)
         (begin t)
         12)) => "(1 . 2)\n"]
 )
@@ -120,7 +168,7 @@
     (vector-set! v0 0 1)
     (let ([v1 (make-vector 1)])
       (vector-set! v1 0 13)
-      (vector-set! (if (vector? v0) v0 v1) 
+      (vector-set! (if (vector? v0) v0 v1)
            (fxsub1 (vector-length (if (vector? v0) v0 v1)))
            (fxadd1 (vector-ref
                       (if (vector? v0) v0 v1)
@@ -132,25 +180,25 @@
 (add-tests-with-string-output "strings"
   [(string? (make-string 0)) => "#t\n"]
   [(make-string 0) => "\"\"\n"]
-  [(let ([s (make-string 1)]) 
+  [(let ([s (make-string 1)])
      (string-set! s 0 #\a)
      (string-ref s 0)) => "#\\a\n"]
-  
-  [(let ([s (make-string 2)]) 
+
+  [(let ([s (make-string 2)])
      (string-set! s 0 #\a)
      (string-set! s 1 #\b)
      (cons (string-ref s 0) (string-ref s 1))) => "(#\\a . #\\b)\n"]
   [(let ([i 0])
-    (let ([s (make-string 1)]) 
+    (let ([s (make-string 1)])
      (string-set! s i #\a)
      (string-ref s i))) => "#\\a\n"]
   [(let ([i 0] [j 1])
-    (let ([s (make-string 2)]) 
+    (let ([s (make-string 2)])
      (string-set! s i #\a)
      (string-set! s j #\b)
      (cons (string-ref s i) (string-ref s j)))) => "(#\\a . #\\b)\n"]
   [(let ([i 0] [c #\a])
-    (let ([s (make-string 1)]) 
+    (let ([s (make-string 1)])
      (string-set! s i c)
      (string-ref s i))) => "#\\a\n"]
   [(string-length (make-string 12)) => "12\n"]
@@ -211,10 +259,10 @@
     (string-set! v0 0 #\a)
     (let ([v1 (make-string 1)])
       (string-set! v1 0 #\A)
-      (string-set! (if (string? v0) v0 v1) 
+      (string-set! (if (string? v0) v0 v1)
            (fxsub1 (string-length (if (string? v0) v0 v1)))
            (fixnum->char
-             (fxadd1 
+             (fxadd1
                 (char->fixnum
                   (string-ref
                      (if (string? v0) v0 v1)
