@@ -32,7 +32,7 @@ typedef enum {
 } type_e;
 
 
-ptr scheme_entry(uint8_t* stack_base);
+ptr scheme_entry(char* stack_base);
 
 int print_ptr(ptr x);
 int main(void);

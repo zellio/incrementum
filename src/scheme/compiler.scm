@@ -446,7 +446,7 @@
   (emit "	.text")
   (emit-function-header "scheme_entry")
   (emit "	mov	%rsp,	%rcx")
-  (emit "	sub	$~s,	%rsp" wordsize)
+  (emit "	mov	0x10(%rsp), %rsp")
   (emit-call "l_scheme_entry")
   (emit "	mov	%rcx,	%rsp")
   (emit-ret))
