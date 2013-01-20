@@ -414,7 +414,7 @@
   (map cons lvars labels))
 
 (define (emit-scheme-entry expr env)
-  (emit-label "l_scheme_entry")
+  (emit-function-header "l_scheme_entry")
   (emit-expr (- wordsize) env expr)
   (emit-ret))
 
