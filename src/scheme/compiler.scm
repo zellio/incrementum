@@ -131,12 +131,12 @@
 (define-primitive ($fxlognot si env arg)
   (emit-expr si env arg)
   (emit "	shr	$~s,	%rax" fixnum-shift)
-  (emit "	not	%eax")
+  (emit "	not	%rax")
   (emit "	shl	$~s,	%rax" fixnum-shift))
 
 (define-primitive ($fxzero? si env arg)
   (emit-expr si env arg)
-  (emit "	cmp	$~s,	%al" fixnum-tag)
+  (emit "	cmp	$~s,	%rax" fixnum-tag)
   (emit-boolean-transform))
 
 (map
