@@ -1,6 +1,4 @@
-
-
-(system "make runtime")
+(system "make runtime.o")
 
 (load "load.scm")
 

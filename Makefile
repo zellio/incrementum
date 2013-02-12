@@ -14,42 +14,23 @@ BINROOT = bin
 
 VPATH=$(SRCROOT):$(INCROOT):$(TSTROOT):$(OBJROOT)
 
+.PHONY: all clean test_clean
 
-.PHONY: all
+all: runtime.o stst.o stst
 
-all: stst
+runtime.o: runtime.c runtime.h
+	$(CC) $(CFLAGS) -I$(INCROOT) -o $(OBJROOT)/$(@) $(<)
 
-.PHONY: clean
+stst.o: stst.s
+	$(CC) -m64 -c -o $(OBJROOT)/$(@) $(<)
 
-clean:
+stst: runtime.o stst.o
+	$(CC) -o $(BINROOT)/$(@) $(OBJROOT)/runtime.o $(OBJROOT)/stst.o
+
+clean test_clean:
 	$(RM) $(OBJROOT)/*.s
 	$(RM) $(OBJROOT)/*.o
 	$(RM) $(BINROOT)/*
 	$(RM) stst.out
 
-ctest.o: ctest.c ctest.h
-	$(CC) $(CFLAGS) -I$(INCROOT) -o $(OBJROOT)/$(@) $(<)
-
-runtime.o: runtime.c runtime.h
-	$(CC) $(CFLAGS) -I$(INCROOT) -o $(OBJROOT)/$(@) $(<)
-
-runtime: runtime.o ctest.o
-	$(CC) -o $(BINROOT)/$(@) $(OBJROOT)/runtime.o $(OBJROOT)/ctest.o
-
-stst.o: stst.s
-	$(CC) -c -o $(OBJROOT)/$(@) $(<)
-
-stst: stst.o runtime.o
-	$(CC) -o $(BINROOT)/$(@) $(OBJROOT)/runtime.o $(OBJROOT)/stst.o
-
-.PHONY: test_clean
-
-test_clean:
-	$(RM) $(OBJROOT)/stst.s
-	$(RM) $(OBJROOT)/stst.o
-	$(RM) $(BINROOT)/*
-	$(RM) stst.out
-
-.SILENT: stst
-.SILENT: stst.o
-.SILENT: test_clean
+.SILENT: stst.o stst test_clean
