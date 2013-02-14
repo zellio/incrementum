@@ -76,9 +76,17 @@ int print_ptr(ptr x) {
 
 int main(void) {
     size_t stack_size = 16 * 4096;
+    size_t heap_size = 16 * 4096;
+
     char* stack_top = alloc_protected_space( stack_size );
     char* stack_base = stack_top + stack_size;
-    print_ptr(scheme_entry(stack_base));
+
+    char* heap = alloc_protected_space( heap_size );
+
+    context_t context;
+    print_ptr(scheme_entry(&context, stack_base, heap));
+
     free_protected_space( stack_top, stack_size );
+    free_protected_space( heap, heap_size );
     return 0;
 }

@@ -31,8 +31,19 @@ typedef enum {
     LANG_T_CHAR      = 0x0F
 } type_e;
 
+typedef struct context context_t;
+struct context {
+    void* rax;
+    void* rbx;
+    void* rcx;
+    void* rdx;
+    void* rsi;
+    void* rdi;
+    void* rbp;
+    void* rsp;
+};
 
-ptr scheme_entry(char* stack_base);
+ptr scheme_entry(context_t* context, char* stack_base, char* heap);
 
 int print_ptr(ptr x);
 int main(void);

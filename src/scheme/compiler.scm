@@ -317,7 +317,8 @@
 (define (emit-variable-ref env expr)
   (let ((table-entry (assoc expr env)))
     (if table-entry (emit-stack-load (cdr table-entry))
-        (error 'emit-variable-ref (format "Undefined variable ~s" expr)))))
+        (error 'emit-variable-ref (format "Undefined variable ~s" expr)))
+    ))
 
 (define (let? expr)
   (list-expr? 'let expr))
@@ -461,14 +462,34 @@
 (define (emit-tail-expr si env expr)
   (emit-generic-expr si env #t expr))
 
-
 (define (emit-program-header)
   (emit "	.text")
   (emit-function-header "scheme_entry")
-  (emit "	mov	%rsp,	%rcx")
-  (emit "	mov	0x10(%rsp), %rsp")
-  (emit-call "l_scheme_entry")
+
+  ;; store context ( base ptr in rax )
+  (emit "	mov	%rbx,	0x8(%rax)")
+  (emit "	mov	%rsi,	0x20(%rax)")
+  (emit "	mov	%rdi,	0x28(%rax)")
+  (emit "	mov	%rbp,	0x30(%rax)")
+  (emit "	mov	%rsp,	0x38(%rax)")
+
+  ;; load stack
   (emit "	mov	%rcx,	%rsp")
+
+  ;; load heap
+  (emit "	mov	%rdx,	%rbx")
+
+  ;; store context
+  (emit "	mov	%rax,	%rdx")
+
+  (emit-call "l_scheme_entry")
+
+  (emit "	mov	0x8(%rdx),	%rbx")
+  (emit "	mov	0x20(%rdx),	%rsi")
+  (emit "	mov	0x28(%rdx),	%rdi")
+  (emit "	mov	0x30(%rdx),	%rbp")
+  (emit "	mov	0x38(%rdx),	%rsp")
+
   (emit-ret))
 
 (define (emit-program program)
