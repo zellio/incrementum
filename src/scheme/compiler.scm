@@ -497,6 +497,22 @@
      (emit-expr si env head)
      (emit-begin si env tail rest))))
 
+(define-primitive (set-cdr! si env arg1 arg2)
+  (emit-binary-operator si env arg1 arg2)
+  (emit "	mov	~s(%rsp),	%rcx" si)
+  (emit "	and	$~s,	%cl" heap-mask)
+  (emit "	mov	%rax,	~s(%rcx)" cdr-offset))
+
+(define-primitive (set-car! si env arg1 arg2)
+  (emit-binary-operator si env arg1 arg2)
+  (emit "	mov	~s(%rsp),	%rcx" si)
+  (emit "	and	$~s,	%cl" heap-mask)
+  (emit "	mov	%rax,	~s(%rcx)" car-offset))
+
+(define-primitive (eq? si env arg1 arg2)
+  (define-binary-predicate 'sete si env arg1 arg2))
+
+
 ;;
 ;;  Compiler
 ;;
