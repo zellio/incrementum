@@ -330,7 +330,8 @@
   (or (let? expr) (let*? expr)))
 
 (define let-bindings cadr)
-(define let-body caddr)
+(define (let-body expr)
+  (if (> (length expr) 3) (cons 'begin (cddr expr)) (caddr expr)))
 
 (define (extend-env var si new-env)
   (cons (cons var si) new-env))
@@ -485,6 +486,16 @@
   (emit "	and	$~s,	%al" heap-mask)
   (emit "	mov	~s(%rax),	%rax" cdr-offset))
 
+(define (begin? expr)
+  (list-expr? 'begin expr))
+
+(define (emit-begin si env tail expr)
+  (if
+   (null? expr) '()
+   (let ((head (car expr))
+         (rest (cdr expr)))
+     (emit-expr si env head)
+     (emit-begin si env tail rest))))
 
 ;;
 ;;  Compiler
@@ -498,6 +509,7 @@
    ((or? expr) (emit-or si env tail expr))
    ((let!? expr) (emit-let si env tail expr))
    ((apply? expr env) (emit-apply si env tail expr))
+   ((begin? expr) (emit-begin si env tail (cdr expr)))
    ((primitive-call? expr)
     (emit-primitive-call si env expr) (when tail (emit-ret)))
    (else (error 'emit-expr (format "~s is not a valid expression" expr)))))
