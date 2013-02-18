@@ -45,8 +45,6 @@
    => "((#t #t . #t) ((#f . #f) . #f))\n"]
 )
 
-
-#!eof
 (add-tests-with-string-output "begin/implicit-begin"
  [(begin 12) => "12\n"]
  [(begin 13 122) => "122\n"]

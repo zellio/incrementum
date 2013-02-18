@@ -42,7 +42,7 @@ static void free_protected_space( char* space, size_t size ) {
     }
 }
 
-int print_ptr(ptr x) {
+int _print_ptr(ptr x, char in_list) {
     if ((x & FIXNUM_MASK) == LANG_T_FIXNUM) {
         printf( "%d", ((int)x) >> FIXNUM_SHIFT );
     }
@@ -65,12 +65,35 @@ int print_ptr(ptr x) {
         default:   printf( "#\\%c", c );   break;
         }
     }
-    else {
-        printf("#<Unknown 0x%08x>", x);
-    }
-    printf( "\n" );
+    else if ((x & OBJECT_MASK) == LANG_T_CONS) {
+        if (in_list == 0)
+            printf("(");
+        _print_ptr(((cons_t*)(x - 1))->car, 0);
 
+        ptr cdr = ((cons_t*)(x - 1))->cdr;
+        if (cdr != LANG_T_NIL) {
+            if ((cdr & OBJECT_MASK) == LANG_T_CONS) {
+                printf(" ");
+                _print_ptr(cdr, 1);
+            }
+            else {
+                printf(" . ");
+                _print_ptr(cdr, 0);
+            }
+        }
+        if (in_list == 0)
+            printf(")");
+    }
+    else {
+        printf("#<Unknown 0x%08lx>", x);
+    }
     fflush(stdout);
+    return 0;
+}
+
+int print_ptr(ptr x) {
+    _print_ptr(x, 0);
+    printf( "\n" );
     return 0;
 }
 

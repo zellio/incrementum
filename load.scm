@@ -2,6 +2,7 @@
 
 (load "test/scheme/tests-driver.scm")
 
+(load "test/scheme/tests-1.9-req.scm")
 (load "test/scheme/tests-1.8-req.scm")
 (load "test/scheme/tests-1.7-req.scm")
 (load "test/scheme/tests-1.6-req.scm")

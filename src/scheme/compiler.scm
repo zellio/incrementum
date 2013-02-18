@@ -338,7 +338,8 @@
 (define (emit-let si env tail expr)
   (define (process-let bindings si new-env)
     (cond
-     ((null? bindings) (emit-generic-expr si new-env tail (let-body expr)))
+     ((null? bindings)
+      (emit-generic-expr si new-env tail (let-body expr)))
      (else
       (let ((binding (car bindings)))
         (emit-expr si (if (let*? expr) new-env env) (cadr binding))
@@ -440,6 +441,51 @@
     (for-each (emit-lambda env) lambdas labels)
     (emit-scheme-entry (letrec-body expr) env)))
 
+
+;;
+;; 1.9 Heap
+;;
+(define heap-mask #xF8)
+
+(define pair-tag  #x01)
+(define pair-mask #x07)
+
+(define-primitive (pair? si env arg)
+  (emit-expr si env arg)
+  (emit "	and	$~s,	%al" pair-mask)
+  (emit "	cmp	$~s,	%al" pair-tag)
+  (emit-boolean-transform))
+
+(define (cons? expr)
+  (list-expr? 'cons expr))
+
+(define car-offset 0)
+(define cdr-offset wordsize)
+(define pair-size 2)
+
+(define (emit-heap-store hi)
+  (emit "	mov	%rax,	~s(%rbp)" hi))
+
+(define-primitive (cons si env arg1 arg2)
+  (emit-binary-operator si env arg1 arg2)
+  (emit "	mov	%rax,	~s(%rbp)" cdr-offset)
+  (emit-stack-load si)
+  (emit "	mov	%rax,	~s(%rbp)" car-offset)
+  (emit "	mov	%rbp,	%rax")
+  (emit "	or	$~s,	%rax" pair-tag)
+  (emit "	add	$~s,	%rbp" (* 8 pair-size)))
+
+(define-primitive (car si env arg)
+  (emit-expr si env arg)
+  (emit "	and	$~s,	%al" heap-mask)
+  (emit "	mov	~s(%rax),	%rax" car-offset))
+
+(define-primitive (cdr si env arg)
+  (emit-expr si env arg)
+  (emit "	and	$~s,	%al" heap-mask)
+  (emit "	mov	~s(%rax),	%rax" cdr-offset))
+
+
 ;;
 ;;  Compiler
 ;;
@@ -477,18 +523,18 @@
   (emit "	mov	%rcx,	%rsp")
 
   ;; load heap
-  (emit "	mov	%rdx,	%rbx")
+  (emit "	mov	%rdx,	%rbp")
 
   ;; store context
-  (emit "	mov	%rax,	%rdx")
+  (emit "	mov	%rax,	%rbx")
 
   (emit-call "l_scheme_entry")
 
-  (emit "	mov	0x8(%rdx),	%rbx")
-  (emit "	mov	0x20(%rdx),	%rsi")
-  (emit "	mov	0x28(%rdx),	%rdi")
-  (emit "	mov	0x30(%rdx),	%rbp")
-  (emit "	mov	0x38(%rdx),	%rsp")
+  (emit "	mov	0x38(%rbx),	%rsp")
+  (emit "	mov	0x30(%rbx),	%rbp")
+  (emit "	mov	0x28(%rbx),	%rdi")
+  (emit "	mov	0x20(%rbx),	%rsi")
+  (emit "	mov	0x8(%rbx),	%rbx")
 
   (emit-ret))
 
