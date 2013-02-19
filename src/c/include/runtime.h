@@ -30,7 +30,8 @@ typedef enum {
     LANG_T_FIXNUM    = 0x00,
     LANG_T_NIL       = 0x3F,
     LANG_T_CHAR      = 0x0F,
-    LANG_T_CONS      = 0x01
+    LANG_T_CONS      = 0x01,
+    LANG_T_VECTOR    = 0x05
 } type_e;
 
 typedef struct context context_t;
@@ -43,12 +44,6 @@ struct context {
     void* rdi;
     void* rbp;
     void* rsp;
-};
-
-typedef struct cons cons_t;
-struct cons {
-    ptr car;
-    ptr cdr;
 };
 
 ptr scheme_entry(context_t* context, char* stack_base, char* heap);

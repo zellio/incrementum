@@ -446,14 +446,14 @@
 ;;
 ;; 1.9 Heap
 ;;
-(define heap-mask #xF8)
+(define heap-align-mask #xF8)
+(define heap-mask #x07)
 
 (define pair-tag  #x01)
-(define pair-mask #x07)
 
 (define-primitive (pair? si env arg)
   (emit-expr si env arg)
-  (emit "	and	$~s,	%al" pair-mask)
+  (emit "	and	$~s,	%al" heap-mask)
   (emit "	cmp	$~s,	%al" pair-tag)
   (emit-boolean-transform))
 
@@ -478,12 +478,12 @@
 
 (define-primitive (car si env arg)
   (emit-expr si env arg)
-  (emit "	and	$~s,	%al" heap-mask)
+  (emit "	and	$~s,	%al" heap-align-mask)
   (emit "	mov	~s(%rax),	%rax" car-offset))
 
 (define-primitive (cdr si env arg)
   (emit-expr si env arg)
-  (emit "	and	$~s,	%al" heap-mask)
+  (emit "	and	$~s,	%al" heap-align-mask)
   (emit "	mov	~s(%rax),	%rax" cdr-offset))
 
 (define (begin? expr)
@@ -500,18 +500,75 @@
 (define-primitive (set-cdr! si env arg1 arg2)
   (emit-binary-operator si env arg1 arg2)
   (emit "	mov	~s(%rsp),	%rcx" si)
-  (emit "	and	$~s,	%cl" heap-mask)
+  (emit "	and	$~s,	%cl" heap-align-mask)
   (emit "	mov	%rax,	~s(%rcx)" cdr-offset))
 
 (define-primitive (set-car! si env arg1 arg2)
   (emit-binary-operator si env arg1 arg2)
   (emit "	mov	~s(%rsp),	%rcx" si)
-  (emit "	and	$~s,	%cl" heap-mask)
+  (emit "	and	$~s,	%cl" heap-align-mask)
   (emit "	mov	%rax,	~s(%rcx)" car-offset))
 
 (define-primitive (eq? si env arg1 arg2)
   (define-binary-predicate 'sete si env arg1 arg2))
 
+(define vector-tag #x05)
+
+(define-primitive (vector? si env arg)
+  (emit-expr si env arg)
+  (emit "	and	$~s,	%al" heap-mask)
+  (emit "	cmp	$~s,	%al" vector-tag)
+  (emit-boolean-transform))
+
+(define vector-length-offset  0)
+(define vector-content-offset wordsize)
+
+(define-primitive (make-vector si env arg)
+  (emit-expr si env arg)
+  (emit "	mov	%rbp, %rcx")
+  (emit "	mov	%rax,	~s(%rbp)" vector-length-offset)
+  (emit "	add	$~s,	%rbp" wordsize)
+  (emit "	mov	$~s,	%rdx" nil-tag)
+  (emit "	shr	$~s,	%rax" fixnum-shift)
+  (let ((memset-start (unique-label))
+        (memset-end   (unique-label)))
+    (emit-label memset-start)
+    (emit "	cmp	$0x0,	%rax")
+    (emit "	je	~a" memset-end)
+    (emit "	mov	%rdx,	0(%rbp)")
+    (emit "	sub	$0x1,	%rax")
+    (emit "	add	$~s,	%rbp" wordsize)
+    (emit-jmp memset-start)
+    (emit-label memset-end))
+  (emit "	mov	%rcx,	%rax")
+  (emit "	or	$~s,	%rax" vector-tag))
+
+(define-primitive (vector-length si env arg)
+  (emit-expr si env arg)
+  (emit "	and	$~s,	%al" heap-align-mask)
+  (emit "	mov	~s(%rax),	%rax" vector-length-offset))
+
+(define-primitive (vector-set! si env arg1 arg2 arg3)
+  (emit-expr si env arg1)
+  (emit "	mov	%rax,	%rcx")
+  (emit "	and	$~s,	%cl" heap-align-mask)
+  (emit-expr si env arg2)
+  (emit "	mov	%rax,	%rdx")
+  (emit-expr si	env	arg3)
+  (emit "	shl	$0x1,	%rdx")
+  (emit "	add	$~s,	%rcx" vector-content-offset)
+  (emit "	add	%rdx,	%rcx")
+  (emit "	mov	%rax,	(%rcx)"))
+
+(define-primitive (vector-ref si env arg1 arg2)
+  (emit-expr si env arg1)
+  (emit "	mov	%rax,	%rcx")
+  (emit "	and	$~s,	%cl" heap-align-mask)
+  (emit-expr si env arg2)
+  (emit "	shl	$0x1,	%rax")
+  (emit "	add	$~s,	%rcx" vector-content-offset)
+  (emit "	add	%rax,	%rcx")
+  (emit "	mov	(%rcx),	%rax"))
 
 ;;
 ;;  Compiler

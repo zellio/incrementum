@@ -66,11 +66,13 @@ int _print_ptr(ptr x, char in_list) {
         }
     }
     else if ((x & OBJECT_MASK) == LANG_T_CONS) {
+        ptr heap_ptr = x - LANG_T_CONS;
+
         if (in_list == 0)
             printf("(");
-        _print_ptr(((cons_t*)(x - 1))->car, 0);
+        _print_ptr(*((ptr*)heap_ptr), 0);
 
-        ptr cdr = ((cons_t*)(x - 1))->cdr;
+        ptr cdr = *((ptr*)(heap_ptr + 8));
         if (cdr != LANG_T_NIL) {
             if ((cdr & OBJECT_MASK) == LANG_T_CONS) {
                 printf(" ");
@@ -83,6 +85,22 @@ int _print_ptr(ptr x, char in_list) {
         }
         if (in_list == 0)
             printf(")");
+    }
+    else if ((x & OBJECT_MASK) == LANG_T_VECTOR) {
+        printf("#(");
+
+        ptr heap_ptr = (x-LANG_T_VECTOR);
+        ptr length = (*((ptr*)(heap_ptr))) >> 2;
+
+        ptr i;
+        for (i=1; i < length; i++) {
+            _print_ptr(*((ptr*)(heap_ptr + (i * 8))), 0);
+            printf(" ");
+        }
+        if (i == length)
+            _print_ptr(*((ptr*)(heap_ptr + (i * 8))), 0);
+
+        printf(")");
     }
     else {
         printf("#<Unknown 0x%08lx>", x);
