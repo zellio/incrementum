@@ -102,6 +102,21 @@ int _print_ptr(ptr x, char in_list) {
 
         printf(")");
     }
+    else if ((x & OBJECT_MASK) == LANG_T_STRING) {
+        printf("\"");
+
+        ptr heap_ptr = (x-LANG_T_STRING);
+        ptr length = (*((ptr*)(heap_ptr))) >> 2;
+
+        char c = '\0';
+        for (ptr i=1; i <= length; i++) {
+            c = (char)(*((ptr*)(heap_ptr + (i * 8))) >> CHAR_SHIFT);
+            if (c == '"'||c == '\\')
+                printf("\\");
+            printf("%c", c);
+        }
+        printf("\"");
+    }
     else {
         printf("#<Unknown 0x%08lx>", x);
     }

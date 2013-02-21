@@ -309,6 +309,11 @@
 (define-primitive (fx>= si env arg1 arg2)
   (define-binary-predicate 'setge si env arg1 arg2))
 
+(map
+ mask-primitive
+ '(fx=   fx<   fx<=   fx>   fx>=  )
+ '(char= char< char<= char> char>=))
+
 ;;
 ;; 1.6 Local Variables
 ;;
@@ -574,6 +579,39 @@
   (emit "	add	$~s,	%rax" vector-content-offset)
   (emit "	add	%rcx,	%rax")
   (emit "	mov	(%rax),	%rax"))
+
+(define string-tag #x06)
+
+(define-primitive (string? si env arg)
+  (emit-expr si env arg)
+  (emit "	and	$~s,	%al" heap-mask)
+  (emit "	cmp	$~s,	%al" string-tag)
+  (emit-boolean-transform))
+
+(define-primitive (make-string si env arg)
+  (emit-expr si env arg)
+  (emit "	mov	%rbp,	%rcx")
+  (emit "	mov	%rax,	~s(%rbp)" vector-length-offset)
+  (emit "	add	$~s,	%rbp" wordsize)
+  (emit "	mov	$~s,	%rdx" char-tag)
+  (emit "	shr	$~s,	%rax" fixnum-shift)
+  (let ((memset-start (unique-label))
+        (memset-end   (unique-label)))
+    (emit-label memset-start)
+    (emit "	cmp	$0x0,	%rax")
+    (emit "	je	~a" memset-end)
+    (emit "	mov	%rdx,	0(%rbp)")
+    (emit "	sub	$0x1,	%rax")
+    (emit "	add	$~s,	%rbp" wordsize)
+    (emit-jmp memset-start)
+    (emit-label memset-end))
+  (emit "	mov	%rcx,	%rax")
+  (emit "	or	$~s,	%rax" string-tag))
+
+(map
+ mask-primitive
+ '(vector-set! vector-ref vector-length)
+ '(string-set! string-ref string-length))
 
 
 ;;

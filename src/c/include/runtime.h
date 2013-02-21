@@ -31,7 +31,8 @@ typedef enum {
     LANG_T_NIL       = 0x3F,
     LANG_T_CHAR      = 0x0F,
     LANG_T_CONS      = 0x01,
-    LANG_T_VECTOR    = 0x05
+    LANG_T_VECTOR    = 0x05,
+    LANG_T_STRING    = 0x06
 } type_e;
 
 typedef struct context context_t;
