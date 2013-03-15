@@ -16,32 +16,33 @@
 
 (define nil-tag #x3F)
 
-(define fixnum-shift 2)
-(define fixnum-mask #x03)
-(define fixnum-tag #x00)
-
-(define boolean-t #x6F)
-(define boolean-f #x2F)
-(define boolean-bit #x06)
 (define boolean-mask #xBF)
+(define boolean-bit  #x06)
+(define true-tag     #x6F)
+(define false-tag    #x2F)
+
+(define fixnum-shift 2)
+(define fixnum-mask  #x03)
+(define fixnum-tag   #x00)
 
 (define char-shift 8)
-(define char-tag #x0F)
-(define char-mask #x3F)
+(define char-mask  #x3F)
+(define char-tag   #x0F)
+
+(define object-mask #x07)
+(define cons-tag    #x01)
+(define vector-tag  #x05)
+(define string-tag  #x06)
+
+(define heap-align-mask #xF8)
 
 
-(define fixnum-bits
-  (- (* wordsize 8) fixnum-shift))
-
-(define fixnum-lower-bound
-  (- (expt 2 (- fixnum-bits 1))))
-
-(define fixnum-upper-bound
-  (sub1 (expt 2 (- fixnum-bits 1))))
-
-(define (fixnum? x)
-  (and (integer? x) (exact? x) (<= fixnum-lower-bound x fixnum-upper-bound)))
-
+(define fixnum?
+  (let* ((bit-length (- (* wordsize 8) fixnum-shift))
+         (lower-bound (- (expt 2 (- bit-length 1))))
+         (upper-bound (sub1 (expt 2 (- bit-length 1)))))
+    (lambda (x)
+      (and (integer? x) (exact? x) (<= lower-bound x upper-bound)))))
 
 ;;
 ;; 1.1 Integers
@@ -53,7 +54,7 @@
 (define (immediate-rep x)
   (cond
    ((fixnum? x) (ash x fixnum-shift))
-   ((boolean? x) (if x boolean-t boolean-f))
+   ((boolean? x) (if x true-tag false-tag))
    ((null? x) nil-tag)
    ((char? x) (logor (ash (char->integer x) char-shift) char-tag))
    (else #f)))
@@ -103,7 +104,7 @@
   (emit "	~a	%al" (if (null? args) 'sete (car args)))
   (emit "	movzb	%al,	%rax")
   (emit "	sal	$~s,	%al" boolean-bit)
-  (emit "	or	$~s,	%al" boolean-f))
+  (emit "	or	$~s,	%al" false-tag))
 
 (define (mask-primitive primitive label)
   (putprop label '*is-prim* #t)
@@ -158,7 +159,7 @@
 (define-primitive (boolean? si env arg)
   (emit-expr si env arg)
   (emit "	and	$~s,	%al" boolean-mask)
-  (emit "	cmp	$~s,	%al" boolean-f)
+  (emit "	cmp	$~s,	%al" false-tag)
   (emit-boolean-transform))
 
 (define-primitive (char? si env arg)
@@ -169,7 +170,7 @@
 
 (define-primitive (not si env arg)
   (emit-expr si env arg)
-  (emit "	cmp	$~s,	%al" boolean-f)
+  (emit "	cmp	$~s,	%al" false-tag)
   (emit-boolean-transform))
 
 
@@ -203,7 +204,7 @@
   (let ((alternate-label (unique-label))
         (terminal-label (unique-label)))
     (emit-expr si env (if-predicate expr))
-    (emit "	cmp	$~s,	%al" boolean-f)
+    (emit "	cmp	$~s,	%al" false-tag)
     (emit "	je	~a" alternate-label)
     (emit-generic-expr si env tail (if-consequent expr))
     (emit-jmp terminal-label)
@@ -214,7 +215,7 @@
 (define (emit-jump-block si env expr jump label)
   (let ((head (car expr)) (rest (cdr expr)))
     (emit-expr si env head)
-    (emit "	cmp	$~s,	%al" boolean-f)
+    (emit "	cmp	$~s,	%al" false-tag)
     (emit "	~a	~a" jump label)
     (unless (null? rest)
       (emit-jump-block si env rest jump label))))
