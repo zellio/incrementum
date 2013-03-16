@@ -129,30 +129,30 @@
 
 (define-primitive ($fxadd1 si env arg)
   (emit-expr si env arg)
-  (emit "	add	$~s,	%rax" (immediate-rep 1)))
+  (emit-add (immediate-rep 1) ax))
 
 (define-primitive ($fxsub1 si env arg)
   (emit-expr si env arg)
-  (emit "	sub	$~s,	%rax" (immediate-rep 1)))
+  (emit-sub (immediate-rep 1) ax))
 
 (define-primitive ($fixnum->char si env arg)
   (emit-expr si env arg)
-  (emit "	shl	$~s,	%rax" (- char-shift fixnum-shift))
-  (emit "	or	$~s,	%rax" char-tag))
+  (emit-shl (- char-shift fixnum-shift) ax)
+  (emit-or char-tag ax))
 
 (define-primitive ($char->fixnum si env arg)
   (emit-expr si env arg)
-  (emit "	shr	$~s,	%rax" (- char-shift fixnum-shift)))
+  (emit-shr (- char-shift fixnum-shift) ax))
 
 (define-primitive ($fxlognot si env arg)
   (emit-expr si env arg)
-  (emit "	shr	$~s,	%rax" fixnum-shift)
-  (emit "	not	%rax")
-  (emit "	shl	$~s,	%rax" fixnum-shift))
+  (emit-shr fixnum-shift ax)
+  (emit-not ax)
+  (emit-shl fixnum-shift ax))
 
 (define-primitive ($fxzero? si env arg)
   (emit-expr si env arg)
-  (emit "	cmp	$~s,	%rax" fixnum-tag)
+  (emit-cmp fixnum-tag ax)
   (emit-boolean-transform))
 
 (map
