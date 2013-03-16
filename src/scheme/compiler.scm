@@ -658,28 +658,29 @@
   (emit-function-header "scheme_entry")
 
   ;; store context ( base ptr in rax )
-  (emit "	mov	%rbx,	0x8(%rax)")
-  (emit "	mov	%rsi,	0x20(%rax)")
-  (emit "	mov	%rdi,	0x28(%rax)")
-  (emit "	mov	%rbp,	0x30(%rax)")
-  (emit "	mov	%rsp,	0x38(%rax)")
+  (emit-save #x08 bx ax)
+  (emit-save #x20 si ax)
+  (emit-save #x28 di ax)
+  (emit-save #x30 bp ax)
+  (emit-save #x38 sp ax)
 
   ;; load stack
-  (emit "	mov	%rcx,	%rsp")
+  (emit-mov cx sp)
 
   ;; load heap
-  (emit "	mov	%rdx,	%rbp")
+  (emit-mov dx bp)
 
   ;; store context
-  (emit "	mov	%rax,	%rbx")
+  (emit-mov ax bx)
 
   (emit-call "l_scheme_entry")
 
-  (emit "	mov	0x38(%rbx),	%rsp")
-  (emit "	mov	0x30(%rbx),	%rbp")
-  (emit "	mov	0x28(%rbx),	%rdi")
-  (emit "	mov	0x20(%rbx),	%rsi")
-  (emit "	mov	0x8(%rbx),	%rbx")
+  ;; load context
+  (emit-load #x38 bx sp)
+  (emit-load #x30 bx bp)
+  (emit-load #x28 bx di)
+  (emit-load #x20 bx si)
+  (emit-load #x08 bx bx)
 
   (emit-ret))
 
