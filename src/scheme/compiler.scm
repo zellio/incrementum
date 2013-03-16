@@ -1,4 +1,15 @@
 
+;;; compiler.scm --- Scheme to x86 compiler
+
+;; Copyright (C) 2012,2013 Zachary Elliott
+;; See LICENSE for more information
+
+;;; Commentary:
+
+;; this file assumes that x86asm-dsl.scm has been loaded
+
+;;; Code:
+
 ;;
 ;; <Program> -> <Expr>
 ;;            | (letrec ((lvar <Lambda>) ...) <Expr>)
@@ -59,8 +70,8 @@
    ((char? x) (logor (ash (char->integer x) char-shift) char-tag))
    (else #f)))
 
-(define (emit-immediate x)
-  (emit "	mov	$~s,	%rax" (immediate-rep x)))
+(define (emit-immediate value . args)
+  (emit-mov (immediate-rep value) (if (null? args) ax (car args))))
 
 
 ;;
@@ -100,11 +111,15 @@
     (check-primitive-call-args sym args)
     (apply (primitive-emitter sym) si env args)))
 
+
 (define (emit-boolean-transform . args)
-  (emit "	~a	%al" (if (null? args) 'sete (car args)))
-  (emit "	movzb	%al,	%rax")
-  (emit "	sal	$~s,	%al" boolean-bit)
-  (emit "	or	$~s,	%al" false-tag))
+  (let* ((arg-length (length args))
+         (target (if (> arg-length 0) (car args) ax))
+         (asm-op (if (> arg-length 1) (cadr args) 'sete)))
+    (emit "	~a	%al" asm-op)
+    (emit-and #x7 target)
+    (emit-shl boolean-bit target)
+    (emit-or false-tag target)))
 
 (define (mask-primitive primitive label)
   (putprop label '*is-prim* #t)
@@ -233,13 +248,13 @@
 (define (and? expr)
   (list-expr? 'and expr))
 
-(define emit-and
+(define emit-and-expr
   (emit-conditional-block #t "je"))
 
 (define (or? expr)
   (list-expr? 'or expr))
 
-(define emit-or
+(define emit-or-expr
   (emit-conditional-block #f "jne"))
 
 
@@ -266,7 +281,7 @@
 (define (define-binary-predicate op si env arg1 arg2)
   (emit-binary-operator si env arg1 arg2)
   (emit "	cmp	%rax,	~s(%rsp)" si)
-  (emit-boolean-transform op))
+  (emit-boolean-transform ax op))
 
 (define-primitive (fx+ si env arg1 arg2)
   (emit-binary-operator si env arg1 arg2)
@@ -623,8 +638,8 @@
    ((immediate? expr) (emit-immediate expr) (when tail (emit-ret)))
    ((variable? expr) (emit-variable-ref env expr) (when tail (emit-ret)))
    ((if? expr) (emit-if si env tail expr))
-   ((and? expr) (emit-and si env tail expr))
-   ((or? expr) (emit-or si env tail expr))
+   ((and? expr) (emit-and-expr si env tail expr))
+   ((or? expr) (emit-or-expr si env tail expr))
    ((let!? expr) (emit-let si env tail expr))
    ((apply? expr env) (emit-apply si env tail expr))
    ((begin? expr) (emit-begin si env tail (cdr expr)))
@@ -672,3 +687,5 @@
   (emit-program-header)
   (if (letrec? program) (emit-letrec program)
       (emit-scheme-entry program (make-initial-env '() '()))))
+
+;; end of compiler.scm

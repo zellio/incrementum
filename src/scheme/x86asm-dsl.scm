@@ -54,4 +54,28 @@
 (define (emit-load offset src dst)
   (emit-load-instruction 'mov offset src dst))
 
+(define (emit-add src dst)
+  (emit-instruction 'add src dst))
+
+(define (emit-sub src dst)
+  (emit-instruction 'sub src dst))
+
+(define (emit-shl src dst)
+  (emit-instruction 'shl src dst))
+
+(define (emit-shr src dst)
+  (emit-instruction 'shr src dst))
+
+(define (emit-or src dst)
+  (emit-instruction 'or src dst))
+
+(define (emit-and src dst)
+  (emit-instruction 'and src dst))
+
+(define (emit-cmp src dst)
+  (emit-instruction 'cmp src dst))
+
+(define (emit-not src)
+  (emit "	not	%~s" src))
+
 ;; end of x86asm-dsl.scm
